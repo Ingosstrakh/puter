@@ -1,19 +1,32 @@
-async function runOCR() {
-    const file = document.getElementById("fileInput").files[0];
+document.getElementById("fileInput").addEventListener("change", async function () {
+    const file = this.files[0];
+    if (!file) return;
+
     const output = document.getElementById("output");
-    output.textContent = "Распознаю...";
+    output.innerText = "Распознаю... Подождите...";
 
-    const worker = await Tesseract.createWorker({
-        workerPath: "worker.min.js",
-        langPath: "./",
-    });
+    try {
+        const { createWorker } = Tesseract;
 
-    await worker.load();
-    await worker.loadLanguage("rus");
-    await worker.initialize("rus");
+        // ВАЖНО: пути должны быть точными!!!
+        const worker = await createWorker({
+            workerPath: 'worker.min.js',          // лежит в корне
+            corePath: 'tesseract-core.js',        // лежит в корне
+            langPath: './tessdata',               // Папка где rus.traineddata
+        });
 
-    const { data } = await worker.recognize(file);
+        await worker.load();                     // загрузка worker.js
+        await worker.loadLanguage('rus');        // загрузка языка
+        await worker.initialize('rus');          // инициализация
 
-    output.textContent = data.text;
-    await worker.terminate();
-}
+        const result = await worker.recognize(file);
+
+        console.log(result.data.text);
+        output.innerText = result.data.text;
+
+        await worker.terminate();
+    } catch (err) {
+        output.innerText = "Ошибка: " + err;
+        console.error(err);
+    }
+});
