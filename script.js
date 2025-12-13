@@ -1,1 +1,19 @@
-const input=document.getElementById('fileInput');const startBtn=document.getElementById('startBtn');const statusDiv=document.getElementById('status');const resultDiv=document.getElementById('result');startBtn.onclick=async()=>{if(!input.files[0]){alert('Выберите изображение!');return;}statusDiv.textContent='Распознаю...';resultDiv.textContent='';const file=input.files[0];const reader=new FileReader();reader.onload=async()=>{try{const {data}=await Tesseract.recognize(reader.result,'rus',{langPath:'./',corePath:'tesseract-core.js',workerPath:'worker.min.js',});statusDiv.textContent='Готово!';resultDiv.textContent=data.text;}catch(e){statusDiv.textContent='Ошибка: '+e;}};reader.readAsDataURL(file);};
+async function runOCR() {
+    const file = document.getElementById("fileInput").files[0];
+    const output = document.getElementById("output");
+    output.textContent = "Распознаю...";
+
+    const worker = await Tesseract.createWorker({
+        workerPath: "worker.min.js",
+        langPath: "./",
+    });
+
+    await worker.load();
+    await worker.loadLanguage("rus");
+    await worker.initialize("rus");
+
+    const { data } = await worker.recognize(file);
+
+    output.textContent = data.text;
+    await worker.terminate();
+}
